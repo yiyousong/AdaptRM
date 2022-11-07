@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 parser = argparse.ArgumentParser()
 parser.add_argument('--specie', default="human",help='human,mouse,rat,zebrafish')
-parser.add_argument('--ID', default='ID0000',help='output_header {ID}.json')
 parser.add_argument('--fa',default='test.fa',help='Fasta File')
 args, unknown = parser.parse_known_args()
 out_list = np.array(['Adrenal'
@@ -155,7 +154,7 @@ class AdaptRM(nn.Module):
                               Linout(in_size=7 * 64, out_size=100))
     def forward(self, x):
         return self.model(x)
-model=torch.load('/home/yiyou/AdaptRM/Multi_Adapt.model',map_location=torch.device('cpu'))
+model=torch.load('Multi_Adapt.model',map_location=torch.device('cpu'))
 specie=np.array(['human','mouse','rat','zebrafish'])
 idx=np.where(specie==args.specie)
 pred_list=[]
@@ -183,21 +182,4 @@ else:
     out_list=np.asarray(['$\mathregular{m^1}$A','$\mathregular{m^5}$C','$\mathregular{m^6}$A','$\mathregular{m^7}$G'])
 predf=pd.DataFrame(pred, columns=out_list)
 predf.insert(0, 'index', name_list)
-predf.to_csv('%s.csv'%(args.ID), index=False, header=True, sep=',')
-def csv_to_json(csvFilePath, jsonFilePath):
-    jsonArray = []
-    # read csv file
-    with open(csvFilePath, encoding='utf-8') as csvf:
-        # load csv file data using csv library's dictionary reader
-        csvReader = csv.DictReader(csvf)
-
-        # convert each csv row into python dict
-        for row in csvReader:
-            # add this python dict to json array
-            jsonArray.append(row)
-
-    # convert python jsonArray to JSON String and write to file
-    with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
-        jsonString = json.dumps(jsonArray, indent=4)
-        jsonf.write(jsonString)
-csv_to_json('%s.csv'%(args.ID), '%s.json'%(args.ID))
+predf.to_csv(pred.csv', index=False, header=True, sep=',')
