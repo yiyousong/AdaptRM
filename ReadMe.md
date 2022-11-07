@@ -17,3 +17,5 @@ listmodel = 0.2.1
 3.	Input and output 
 * The input object should be a list of [1, -1, 4] representing a query sequence.
 * The output would be a vector of values. Each element ranges from 0 to 1 and represents the probability of its corresponding task.
+
+a test.py is provided for transforming .fasta file into the above shaped input and returns a .csv prediction file
