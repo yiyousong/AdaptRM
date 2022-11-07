@@ -51,10 +51,10 @@ if __name__ == '__main__':
     else:
         model = nn.Sequential(Conv1dtranspose(in_chan=src_vocab, kernel_size=7, in_transpose=True, out_chan=32),
                               Conv1dtranspose(in_chan=32, kernel_size=7, out_chan=64, dropout=drop, acti=args.act),
-                              nn.AdaptiveAvgPool1d(15),
+                              nn.AdaptiveAvgPool1d(19),
                               Conv1dtranspose(in_chan=64, kernel_size=7, out_chan=32, dropout=drop, acti=args.act),
                               Conv1dtranspose(in_chan=32, kernel_size=7, out_chan=64, dropout=drop, acti=args.act),
-                              Linout(in_size=3 * 64, acti=args.act, out_size=100)
+                              Linout(in_size=7 * 64, acti=args.act, out_size=100)
                               )
         model = model.cuda()
     for p in model.parameters():
