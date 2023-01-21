@@ -11,19 +11,21 @@ from sublayers import *
 torch.set_num_threads(1)
 np.random.seed(7)
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', default=3,help='Weak,Adapt,Encoder,Mixer')
+parser.add_argument('--model', default=3,help='0,1,2,3 for Weak,Adapt,Encoder,Mixer')
 parser.add_argument('--embedsize', default=1,help='4^__size__')
 parser.add_argument('--dim', default=None)
 parser.add_argument('--depth', default=None)
+parser.add_argument('--header', default='/home/yiyou/')
+parser.add_argument('--datadir', default='/data/yiyou/')
 parser.add_argument('--drop', default=0.2)
 parser.add_argument('--act', default='relu')
 parser.add_argument('--out',default=None,help='feedback output')
 parser.add_argument('--sep',default=False,help='sep head')
-
 parser.add_argument('--weightloss',default=False,help='')
-
 args, unknown = parser.parse_known_args()
 num_epoch=20
+args.header='/home/yiyou/'
+args.datadir='/data/yiyou/'
 src_vocab=4**int(args.embedsize)
 model_list=['Weak','Adapt','Encoder','Mixer']
 drop=float(args.drop)
@@ -46,7 +48,7 @@ if args.depth is None:
 else:
     depth=int(args.depth)
 if args.out is None:
-    args.out='/home/yiyou/out/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s.out'%(model_list[int(args.model)],int(args.embedsize),drop,dim,depth,args.act,args.sep,args.weightloss)
+    args.out='%sout/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s.out'%(args.header,model_list[int(args.model)],int(args.embedsize),drop,dim,depth,args.act,args.sep,args.weightloss)
 lossweight=np.array([0.79377679, 0.55017606, 3.14465409, 1.33832976, 0.67925554,
        0.53384583, 3.17662008, 2.08594076, 0.9046499 , 0.53648069,
        1.49120191, 2.54452926, 0.68709633, 1.56838143, 0.77006006,
@@ -55,8 +57,8 @@ lossweight=np.array([0.79377679, 0.55017606, 3.14465409, 1.33832976, 0.67925554,
 
 
 def loaddata(i):
-    data, label = np2tensor(np.load("/data/yiyou/Multi_WeakRM/multi_shuffled/data_%d" % (i), allow_pickle=True),
-                                np.load("/data/yiyou/Multi_WeakRM/multi_shuffled/label_%d" % (i), allow_pickle=True)
+    data, label = np2tensor(np.load("%sMulti_WeakRM/multi_shuffled/data_%d" % (args.datadir,i), allow_pickle=True),
+                                np.load("%sMulti_WeakRM/multi_shuffled/label_%d" % (args.datadir,i), allow_pickle=True)
                             ,mer=int(args.embedsize))
 
     return data, label
@@ -103,7 +105,7 @@ if __name__ == '__main__':
             else:
                 scrip.run_epoch(model,data_list,label_list,test_data,test_label,optimizer=optimizer,loss_func=loss_func)
         tmp=np.flip(tmp)
-    model_name='/home/yiyou/may/model/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s.model'%(model_list[int(args.model)],int(args.embedsize),drop,dim,depth,args.act,args.sep,args.weightloss)
+    model_name='%s/model/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s.model'%(args.header,model_list[int(args.model)],int(args.embedsize),drop,dim,depth,args.act,args.sep,args.weightloss)
     torch.save(model,model_name )
     data_list = []
     label_list = []
@@ -115,9 +117,9 @@ if __name__ == '__main__':
     print('FINAL AUROC')
     auc,predlist=scrip.run_test_epoch(model, data_list, label_list,returnpred=True)
     print('average auc: %.4f'%(np.average(auc[:,0])))
-    np.save('/home/yiyou/out/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s_pred.npy' % (
-        model_list[int(args.model)], int(args.embedsize), drop, dim, depth, args.act, args.sep,args.weightloss),predlist)
-    np.save('/home/yiyou/out/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s_label.npy' % (
-        model_list[int(args.model)], int(args.embedsize), drop, dim, depth, args.act, args.sep,args.weightloss),np.asarray(label_list))
+    np.save('%sout/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s_pred.npy' % (
+        args.header,model_list[int(args.model)], int(args.embedsize), drop, dim, depth, args.act, args.sep,args.weightloss),predlist)
+    np.save('%sout/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s_label.npy' % (
+        args.header,model_list[int(args.model)], int(args.embedsize), drop, dim, depth, args.act, args.sep,args.weightloss),np.asarray(label_list))
 
     sys.stdout.close()
