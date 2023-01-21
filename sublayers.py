@@ -341,7 +341,7 @@ def losswithmask(pred, labelsign, loss_function=nn.functional.binary_cross_entro
 #     return loss
 def actfunc(activation='relu'):
     if activation == 'relu':
-        act = nn.PReLU
+        act = nn.ReLU
     elif activation == 'elu':
         act = nn.ELU
     else:
@@ -399,7 +399,7 @@ class Mergemodel(nn.Module):
 
         return self.modelhead(torch.cat(outlist,dim=-1))
 class Linout(nn.Module):
-    def __init__(self,in_size,out_size,hidden=2048,acti='relu',dropout=0.2,sephead=False):
+    def __init__(self,in_size,out_size,hidden=1000,acti='relu',dropout=0.2,sephead=False):
         super(Linout, self).__init__()
         self.flat=nn.Flatten()
         if not sephead:
