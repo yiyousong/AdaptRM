@@ -19,3 +19,6 @@ listmodel = 0.2.1
 * The output would be a vector of values. Each element ranges from 0 to 1 and represents the probability of its corresponding task.
 
 a test.py is provided for transforming .fasta file into the above shaped input and returns a .csv prediction file
+
+
+the shuffle.py and zebrafish.py might be outdated, but were still uploaded for reference only    
