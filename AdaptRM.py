@@ -5,7 +5,7 @@ from sklearn import metrics
 import torch.nn as nn
 import torch.nn.functional as F
 import math, copy, time
-import torch_scripts_sep as scrip
+import utils as utils
 import argparse
 from sublayers import *
 torch.set_num_threads(1)
@@ -100,10 +100,10 @@ if __name__ == '__main__':
                 label_list.extend(label)
             test_data,test_label=loaddata(20+j)
             if args.weightloss:
-                scrip.run_epoch(model, data_list, label_list, test_data, test_label, optimizer=optimizer,
+                utils.run_epoch(model, data_list, label_list, test_data, test_label, optimizer=optimizer,
                                 loss_func=loss_func,weights=lossweight)
             else:
-                scrip.run_epoch(model,data_list,label_list,test_data,test_label,optimizer=optimizer,loss_func=loss_func)
+                utils.run_epoch(model,data_list,label_list,test_data,test_label,optimizer=optimizer,loss_func=loss_func)
         tmp=np.flip(tmp)
     model_name='%s/model/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s.model'%(args.header,model_list[int(args.model)],int(args.embedsize),drop,dim,depth,args.act,args.sep,args.weightloss)
     torch.save(model,model_name )
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         label_list.extend(label)
     print('total epoch%d'%(num_epoch))
     print('FINAL AUROC')
-    auc,predlist=scrip.run_test_epoch(model, data_list, label_list,returnpred=True)
+    auc,predlist=utils.run_test_epoch(model, data_list, label_list,returnpred=True)
     print('average auc: %.4f'%(np.average(auc[:,0])))
     np.save('%sout/Multi_%s_embedsize%d_dropout%.2f_dim%d_depth%d_act%s_sep_%s_weightloss_%s_pred.npy' % (
         args.header,model_list[int(args.model)], int(args.embedsize), drop, dim, depth, args.act, args.sep,args.weightloss),predlist)

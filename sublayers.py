@@ -1,16 +1,15 @@
-import pandas as pd
+# This file includes sublayer functions that form the AdaptRM and other competing methods.
+# References:
+# The functions in this file are based on the torch.nn module.
+# The functions related to the Transformer part come from the following work:
+# Alexander Rush. 2018. The Annotated Transformer. In Proceedings of Workshop for NLP Open Source Software (NLP-OSS), 
+# pages 52–60, Melbourne, Australia. Association for Computational Linguistics.
+
 import numpy as np
 import torch
-from sklearn import metrics
 import torch.nn as nn
 import torch.nn.functional as F
 import math, copy, time
-from torch.autograd import Variable
-import matplotlib.pyplot as plt
-# import transformer as t
-import itertools
-import argparse
-
 
 class LayerNorm(nn.Module):
     "Construct a layernorm module (See citation for details)."
@@ -133,7 +132,6 @@ class SelfAttention(nn.Module):
 #     def forward(self, x):
 #         return torch.fft.rfft2(x)
 
-
 class Encoderlayer(nn.Module):
     "Core encoder is a stack of N layers"
 
@@ -149,7 +147,7 @@ class Encoderlayer(nn.Module):
         else:
             self.resout = False
         if fourier:
-            self.att = rfft2()
+            self.att = torch.fft.rfft2()
         else:
             self.att = SelfAttention(inputsize, headnum, modelsize)
         self.Wz = nn.Sequential(nn.Linear(modelsize * headnum, outsize), actfunc(acti), nn.Linear(outsize, outsize))
@@ -166,6 +164,8 @@ class Encoderlayer(nn.Module):
         else:
             out = self.Wz(z)
         return out
+
+
 class ReshapeTrim(nn.Module):
     def __init__(self,width=40,dim=-2):
         super(ReshapeTrim, self).__init__()
@@ -181,7 +181,8 @@ class ReshapeTrim(nn.Module):
         x=x.narrow(dim,start,numpiece*width)
         x=x.view([numpiece, width, -1])
         return x
-#
+
+
 # class Decoderlayer(nn.Module):
 #     "Core encoder is a stack of N layers"
 #
@@ -339,6 +340,8 @@ def losswithmask(pred, labelsign, loss_function=nn.functional.binary_cross_entro
 #     tmp+=zeros*(predsign==-1)
 #     loss=losswithmask(pred,tmp,loss_func)
 #     return loss
+
+
 def actfunc(activation='relu'):
     if activation == 'relu':
         act = nn.ReLU
@@ -347,6 +350,8 @@ def actfunc(activation='relu'):
     else:
         act = nn.PReLU
     return act()
+
+
 class CLS(nn.Module):
     def __init__(self, in_size, out_size=100,acti='relu'):
         super(CLS, self).__init__()
@@ -379,6 +384,8 @@ class Transformer(nn.Module):
         x = self.Embed(x)
         x = torch.cat([self.cls, x], dim=0)
         return self.model(x)
+
+
 class Mergemodel(nn.Module):
     def __init__(self,modelhead,modellist):
         super(Mergemodel, self).__init__()
@@ -398,6 +405,8 @@ class Mergemodel(nn.Module):
             outlist.append(out)
 
         return self.modelhead(torch.cat(outlist,dim=-1))
+
+
 class Linout(nn.Module):
     def __init__(self,in_size,out_size,hidden=1000,acti='relu',dropout=0.2,sephead=False):
         super(Linout, self).__init__()
@@ -422,6 +431,8 @@ class Linout(nn.Module):
         x=self.flat(x)
         out=self.model(x)
         return out
+
+
 class list2model(nn.Module):
     def __init__(self, modellist):
         super(list2model, self).__init__()
@@ -433,7 +444,6 @@ class list2model(nn.Module):
             out_list.append(out)
         out=torch.cat(out_list)
         return out
-
 
 
 def np2tensor(input_list, label_list=None, mer=1,newvar=0, chunk=False,instance_length=40,shuffle=False):
@@ -476,5 +486,3 @@ def np2tensor(input_list, label_list=None, mer=1,newvar=0, chunk=False,instance_
         return input_tensor_list, label_tensor_list
     else:
         return input_tensor_list
-
-

@@ -1,58 +1,60 @@
+# This file includes a procedure of training the AdaptRM model.
+
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
 import argparse
+import copy
 import csv
 import json
 import torch
 import torch.nn as nn
 parser = argparse.ArgumentParser()
-parser.add_argument('--specie', default="human",help='human,mouse,rat,zebrafish')
+parser.add_argument('--specie', default="human_low",help='human_low, human_base, mouse_base, rat_base, zebrafish_low')
 parser.add_argument('--fa',default='test.fa',help='Fasta File')
 args, unknown = parser.parse_known_args()
-out_list = np.array(['Adrenal'
-                        , 'Brainstem'
-                        , 'Cerebellum'
-                        , 'Cerebrum'
-                        , 'Colon'
-                        , 'EndoC'
-                        , 'endometrial'
-                        , 'Heart'
-                        , 'HSC'
-                        , 'Hypothalamus'
-                        , 'islet'
-                        , 'Kidney'
-                        , 'Liver'
-                        , 'lung'
-                        , 'lymphocyte'
-                        , 'Muscle'
-                        , 'ovary'
-                        , 'Prostate'
-                        , 'Rectum'
-                        , 'RWPE'
-                        , 'Skin'
-                        , 'Stomach'
-                        , 'Testis'
-                        , 'Thyroid'
-                        , 'Urinary'
-                        , 'ac4c'
-                        , 'hm5c'
-                        , 'm7g'
-                        , 'h_b'
-                        , 'h_k'
-                        , 'h_l'
-                        , 'm_b'
-                        , 'm_h'
-                        , 'm_k'
-                        , 'm_l'
-                        , 'm_t'
-                        , 'r_b'
-                        , 'r_k'
-                        , 'r_l'
-                        ,'m1A_Ctrl'
-                        ,'m5C_Ctrl'
-                        ,'m6A_Ctrl'
-                        ,'m7G_Ctrl'  ])
+out_list = np.array(['Adrenal', 
+                     'Brainstem', 
+                     'Cerebellum', 
+                     'Cerebrum', 
+                     'Colon', 
+                     'EndoC', 
+                     'endometrial', 
+                     'Heart', 
+                     'HSC', 
+                     'Hypothalamus', 
+                     'islet', 
+                     'Kidney', 
+                     'Liver', 
+                     'lung', 
+                     'lymphocyte', 
+                     'Muscle', 
+                     'ovary', 
+                     'Prostate', 
+                     'Rectum', 
+                     'RWPE', 
+                     'Skin', 
+                     'Stomach', 
+                     'Testis', 
+                     'Thyroid', 
+                     'Urinary', 
+                     'h_b', 
+                     'h_k', 
+                     'h_l', 
+                     'm_b', 
+                     'm_h', 
+                     'm_k', 
+                     'm_l', 
+                     'm_t', 
+                     'r_b', 
+                     'r_k', 
+                     'r_l',
+                     'm1A_Ctrl',
+                     'm5C_Ctrl',
+                     'm6A_Ctrl',
+                     'm7G_Ctrl'])
+
+
 class Conv1dtranspose(nn.Module):
     def __init__(self, in_chan, out_chan, kernel_size=3, stride=1, dilation=1, padding=0, pooling=False,
                  in_transpose=False, out_transpose=False, groups=1, dropout=0.1):
@@ -84,6 +86,12 @@ class Conv1dtranspose(nn.Module):
             x = torch.transpose(x, -1, -2)
         return x
 
+
+def clones(module, N):
+    "Produce N identical layers."
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
+
 class Linout(nn.Module):
     def __init__(self,in_size,out_size,hidden=2048,dropout=0.2,sephead=False):
         super(Linout, self).__init__()
@@ -108,6 +116,8 @@ class Linout(nn.Module):
         x=self.flat(x)
         out=self.model(x)
         return out
+    
+    
 class list2model(nn.Module):
     def __init__(self, modellist):
         super(list2model, self).__init__()
@@ -119,7 +129,6 @@ class list2model(nn.Module):
             out_list.append(out)
         out=torch.cat(out_list)
         return out
-
 
 
 def fasta2binonehot(data):
@@ -143,6 +152,8 @@ def fasta2binonehot(data):
     bindata = np.append(bindata, G, axis=-1)
     bindata = np.append(bindata, U, axis=-1)
     return bindata
+
+
 class AdaptRM(nn.Module):
     def __init__(self):
         super(AdaptRM, self).__init__()
@@ -154,8 +165,11 @@ class AdaptRM(nn.Module):
                               Linout(in_size=7 * 64, out_size=100))
     def forward(self, x):
         return self.model(x)
+
+
+# Train a multi-task AdaptRM model
 model=torch.load('Multi_Adapt.model',map_location=torch.device('cpu'))
-specie=np.array(['human','mouse','rat','zebrafish'])
+specie=np.array(['human_low', 'human_base', 'mouse_base', 'rat_base', 'zebrafish_low'])
 idx=np.where(specie==args.specie)
 pred_list=[]
 name_list=[]
@@ -165,21 +179,27 @@ for record in SeqIO.parse(args.fa, "fasta"):
     seq=torch.as_tensor(seq[np.newaxis,:]).float()
     pred=model.forward(seq).view(-1)
     pred_list.append(pred.detach().numpy())
+    
 pred=np.asarray(pred_list)
 
+# Output the prediction results
 idx=int(np.where(specie==args.specie)[0])
 if idx==0:
     pred=pred[:,:25]
     out_list=out_list[:25]
 elif idx==1:
-    pred=pred[:,31:36]
-    out_list=np.asarray(['mouse_brain','mouse_heart','mouse_kidney','mouse_liver','mouse_testis'])
+    pred=pred[:,26:28]
+    out_list=np.asarray(['human_brain','human_kidney','mouse_liver'])   
 elif idx==2:
-    pred=pred[:,36:39]
+    pred=pred[:,29:33]
+    out_list=np.asarray(['mouse_brain','mouse_heart','mouse_kidney','mouse_liver','mouse_testis'])
+elif idx==3:
+    pred=pred[:,34:36]
     out_list=np.asarray(['rat_brain','rat_kidney','rat_liver'])
 else:
-    pred=pred[:,40:44]
+    pred=pred[:,37:40]
     out_list=np.asarray(['$\mathregular{m^1}$A','$\mathregular{m^5}$C','$\mathregular{m^6}$A','$\mathregular{m^7}$G'])
+
 predf=pd.DataFrame(pred, columns=out_list)
 predf.insert(0, 'index', name_list)
-predf.to_csv(pred.csv', index=False, header=True, sep=',')
+predf.to_csv('pred.csv', index=False, header=True, sep=',')

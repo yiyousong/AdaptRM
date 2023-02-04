@@ -1,83 +1,81 @@
-# This file includes functions for training, evaluating epochs and evaluating results.
-
 import torch
 import numpy as np
+import pandas as pd
 from torch import nn
 from torch.utils.data import TensorDataset,DataLoader
 from sklearn import metrics
 
-out_list = np.array(['Adrenal', 
-                     'Brainstem', 
-                     'Cerebellum', 
-                     'Cerebrum', 
-                     'Colon', 
-                     'EndoC', 
-                     'endometrial', 
-                     'Heart', 
-                     'HSC', 
-                     'Hypothalamus', 
-                     'islet', 
-                     'Kidney', 
-                     'Liver', 
-                     'lung', 
-                     'lymphocyte', 
-                     'Muscle', 
-                     'ovary', 
-                     'Prostate', 
-                     'Rectum', 
-                     'RWPE', 
-                     'Skin', 
-                     'Stomach', 
-                     'Testis', 
-                     'Thyroid', 
-                     'Urinary', 
-                     'h_b', 
-                     'h_k', 
-                     'h_l', 
-                     'm_b', 
-                     'm_h', 
-                     'm_k', 
-                     'm_l', 
-                     'm_t', 
-                     'r_b', 
-                     'r_k', 
-                     'r_l',
-                     'm1A_Ctrl',
-                     'm5C_Ctrl',
-                     'm6A_Ctrl',
-                     'm7G_Ctrl'])
-
+out_list = np.array(['Adrenal'
+                        , 'Brainstem'
+                        , 'Cerebellum'
+                        , 'Cerebrum'
+                        , 'Colon'
+                        , 'EndoC'
+                        , 'endometrial'
+                        , 'Heart'
+                        , 'HSC'
+                        , 'Hypothalamus'
+                        , 'islet'
+                        , 'Kidney'
+                        , 'Liver'
+                        , 'lung'
+                        , 'lymphocyte'
+                        , 'Muscle'
+                        , 'ovary'
+                        , 'Prostate'
+                        , 'Rectum'
+                        , 'RWPE'
+                        , 'Skin'
+                        , 'Stomach'
+                        , 'Testis'
+                        , 'Thyroid'
+                        , 'Urinary'
+                        , 'ac4c'
+                        , 'hm5c'
+                        , 'm7g'
+                        , 'h_b'
+                        , 'h_k'
+                        , 'h_l'
+                        , 'm_b'
+                        , 'm_h'
+                        , 'm_k'
+                        , 'm_l'
+                        , 'm_t'
+                        , 'r_b'
+                        , 'r_k'
+                        , 'r_l'
+                        ,'m1A_Ctrl'
+                        ,'m5C_Ctrl'
+                        ,'m6A_Ctrl'
+                        ,'m7G_Ctrl'
+                        ,'m1A_Hypo'
+                        ,'m5C_Hypo'
+                        ,'m6A_Hypo'
+                        ,'m7G_Hypo'  ])
 max_nclass=100
 
-
-def run_train_epoch(model,data,labelsign,optimizer,loss_func,pos_weight=1):
+def run_train_epoch(model,data,labelsign,optimizer,loss_func,weights=None):
     pred_list=[]
     for i in range(len(data)):
         data1=data[i]
         label1=labelsign[i]
         pred=model(data1)
         optimizer.zero_grad()
-        loss=signloss(loss_func,pred,label1,pos_weight=pos_weight)
+        loss=signloss(loss_func,pred,label1,weights=weights)
         loss.backward()
         optimizer.step()
         pred_list.append(pred)
     result=evaluate(pred_list,labelsign,prefix='train')
     return result
-
-
-def signloss(loss_func,pred,labelsign,mask_by_weight=True,pos_weight=1):
+def signloss(loss_func,pred,labelsign,weights=None):
         mask=labelsign**2
-        mask[labelsign>0]=pos_weight
+        mask[labelsign>0]=1
+        if weights is not None:
+            for i in range(len(weights)):
+                mask[:,i]*=weights[i]
         label=(labelsign+1)//2
-        if mask_by_weight:
-            loss=loss_func(pred,label,weight=mask)
-        else:
-            label=label[mask]
-            pred=pred[mask]
-            loss=loss_func(pred,label)
+        loss=loss_func(pred,label,weight=mask)
         return loss
-
-
 def evaluate(pred_list,labelsign=None,prefix=''):
     pred_list = torch.cat(pred_list).cpu().detach().numpy()
     label = torch.cat(labelsign).cpu().numpy()
@@ -112,10 +110,8 @@ def evaluate(pred_list,labelsign=None,prefix=''):
         print('%stask %d:\tauc: %.3f\tf1: %.3f\tmcc: %.3f\tap: %.3f\tsenseticity: %.3f\tspecificity: %.3f\t'% (prefix,i, auc,f1,mcc,pr,sense,speci), flush=True)
     result=np.array(result)
     return result
-
-
 @torch.no_grad()
-def run_test_epoch(model,data,labelsign):
+def run_test_epoch(model,data,labelsign,returnpred=False):
     model.eval()
     pred_list = []
     for i in range(len(data)):
@@ -124,9 +120,14 @@ def run_test_epoch(model,data,labelsign):
         pred_list.append(pred)
     result=evaluate(pred_list,labelsign,prefix='test ')
     model.train()
-    return result
-
-
+    if not returnpred:
+        return result
+    else:
+        return result,pred_list
+def run_epoch(model,traindata,trainlabelsign,testdata,testlabelsign,optimizer,loss_func,weights=None):
+    train_auc=run_train_epoch(model, traindata, trainlabelsign, optimizer, loss_func,weights=weights)
+    test_auc=run_test_epoch(model, testdata,testlabelsign)
+    return train_auc,test_auc
 def np2tensor(input_list, label_list=None, mer=1,newvar=0,minlength=0,maxlength=5000, chunk=False,instance_length=40,shuffle=False,train_ratio=0.8,posrep=1,negrep=1):
     input_tensor_list = []
     if label_list is not None:
@@ -182,38 +183,30 @@ def np2tensor(input_list, label_list=None, mer=1,newvar=0,minlength=0,maxlength=
         return input_tensor_list, label_tensor_list
     else:
         return input_tensor_list
-
-
-def run_epoch(model,traindata,trainlabelsign,testdata,testlabelsign,optimizer,loss_func,pos_weight=1):
-    train_auc=run_train_epoch(model, traindata, trainlabelsign, optimizer, loss_func,pos_weight=pos_weight)
-    test_auc=run_test_epoch(model, testdata,testlabelsign)
-    return train_auc,test_auc
-
-
 def loadsingledata(query,mer=1,newvar=0,expand_label=True,shuffle=False,minlength=0,maxlength=1000,posrep=1,negrep=1,train_ratio=0.8):
     if type(query) is str:
         if not query.isnumeric():
             query = np.where(out_list == query)[0][0]
         else:
             query = int(query)
-    if query<25:
-        data=np.load('/data/%s_positive.pickle'%(out_list[query]),allow_pickle=True)
-        neg_data=np.load('/data/%s_negative.pickle'%(out_list[query]),allow_pickle=True)
+    if query<28:
+        data=np.load('/data/yiyou/Multi_WeakRM/%s_positive.pickle'%(out_list[query]),allow_pickle=True)
+        neg_data=np.load('/data/yiyou/Multi_WeakRM/%s_negative.pickle'%(out_list[query]),allow_pickle=True)
         label=np.append(np.ones(len(data)),np.ones(len(neg_data))*-1)
         multi_label=np.zeros([len(label),max_nclass])
         multi_label[:,query]=label
         data.extend(neg_data)
         #sample using random.sample(dataset,n)
-    elif query < 37:
-        data = np.load('/data/sin%d.npy'%(query-25))
-        label = np.load('/data/sin%d.label.npy'%(query-25))[:,query-25]
+    elif query < 39:
+        data = np.load('/data/yiyou/independent/sin%d.npy'%(query-28))
+        label = np.load('/data/yiyou/independent/sin%d.label.npy'%(query-28))[:,query-28]
         multi_label = np.zeros([len(label), max_nclass])
         multi_label[:, query] = label
         # sample using random.sample(dataset,n)
 
     else:
-        data = np.load('/data/zebrafish/%s_positive.pickle' % (out_list[query]), allow_pickle=True)
-        neg_data = np.load('/data/zebrafish/%s_negative.pickle' % (out_list[query]), allow_pickle=True)
+        data = np.load('/data/yiyou/Multi_WeakRM/zebrafish/%s_positive.pickle' % (out_list[query]), allow_pickle=True)
+        neg_data = np.load('/data/yiyou/Multi_WeakRM/zebrafish/%s_negative.pickle' % (out_list[query]), allow_pickle=True)
         label = np.append(np.ones(len(data)), np.ones(len(neg_data)) * -1)
         multi_label = np.zeros([len(label), max_nclass])
         multi_label[:, query] = label
@@ -222,6 +215,7 @@ def loadsingledata(query,mer=1,newvar=0,expand_label=True,shuffle=False,minlengt
         multi_label=label
     datatensor,labeltensor=np2tensor(data,multi_label,mer=mer,newvar=newvar,shuffle=shuffle,minlength=minlength,maxlength=maxlength,posrep=posrep,negrep=negrep,train_ratio=train_ratio)
     return datatensor,labeltensor
+
 
 
 

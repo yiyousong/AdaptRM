@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import torch
-import torch_scripts_sep as scrip
+import utils as utils
 import argparse
 from sublayers import *
 parser = argparse.ArgumentParser()
@@ -104,7 +104,7 @@ test_data_list=[]
 test_label_list=[]
 if targetlist:
     for targetint in target:
-        data,label=scrip.loadsingledata(targetint,mer=mer,shuffle=True,minlength=50,maxlength=500)
+        data,label=utils.loadsingledata(targetint,mer=mer,shuffle=True,minlength=50,maxlength=500)
         train_data=data[:int(len(data)*0.8)]
         test_data=data[int(len(data)*0.8):]
         train_label = label[:int(len(label) * 0.8)]
@@ -121,20 +121,20 @@ if targetlist:
                 train_label = train_label_list[k]
                 test_data = test_data_list[k]
                 test_label = test_label_list[k]
-                train_auc, test_auc = scrip.run_epoch(model, train_data, train_label,
+                train_auc, test_auc = utils.run_epoch(model, train_data, train_label,
                                                       test_data, test_label,
                                                       optimizer=optimizer, loss_func=loss_func)
                 if i == 9:
                     print('final_test_auc=%f', test_auc[0])
 else:
-        data, label = scrip.loadsingledata(target, mer=mer, shuffle=True, minlength=50, maxlength=500)
+        data, label = utils.loadsingledata(target, mer=mer, shuffle=True, minlength=50, maxlength=500)
         train_data = data[:int(len(data) * 0.8)]
         test_data = data[int(len(data) * 0.8):]
         train_label = label[:int(len(label) * 0.8)]
         test_label = label[int(len(label) * 0.8):]
         print(len(data))
         for i in range(10):
-                train_auc, test_auc = scrip.run_epoch(model, train_data, train_label,
+                train_auc, test_auc = utils.run_epoch(model, train_data, train_label,
                                                       test_data, test_label,
                                                       optimizer=optimizer, loss_func=loss_func)
                 if i == 9:
