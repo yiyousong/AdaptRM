@@ -15,11 +15,10 @@ autograd = 1.5.0
 listmodel = 0.2.1  
 
 3.	**Input and output**  
-* The input object should be a list of [1, -1, 4] representing a query sequence.  
-* The output would be a vector of values. Each element ranges from 0 to 1 and represents the probability of its corresponding task.  
-* The test.py is provided for converting .fasta file into the input sequence as requested, training a multi-task AdaptRM model and returning a .csv prediction file.  
-* The comparison.py can train a AdaptRM model from scratch on new datasets
-* The AdaptRM.py, transfer_learn.py, and zebrafish.py are the original python file used to train the models. These files are uploaded for reference only, they will not work normally in a new environment.
+* A test.py is provided for .fasta file inputs and returns a .csv prediction file.  
+* The model takes input of shape [1, -1, 4] representing a query sequence and returns a vector of values ranged from 0 to 1 representing the score of its corresponding task.  
+* The AdaptRM.py can train a AdaptRM model and three competing methods described in the paper from scratch on new datasets
+* The human_tissue.py, transfer_learn.py, and zebrafish.py in the 'outdated' folder are outdated files used to train the models. These files are uploaded just as reference examples only
 
 ## References  
 * Rush A., The Annotated Transformer. In Proceedings of Workshop for NLP Open Source Software (NLP-OSS), 2018. (https://doi.org/10.18653/v1/W18-2509)

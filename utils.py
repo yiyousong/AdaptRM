@@ -30,9 +30,6 @@ out_list = np.array(['Adrenal'
                         , 'Testis'
                         , 'Thyroid'
                         , 'Urinary'
-                        , 'ac4c'
-                        , 'hm5c'
-                        , 'm7g'
                         , 'h_b'
                         , 'h_k'
                         , 'h_l'
@@ -47,11 +44,7 @@ out_list = np.array(['Adrenal'
                         ,'m1A_Ctrl'
                         ,'m5C_Ctrl'
                         ,'m6A_Ctrl'
-                        ,'m7G_Ctrl'
-                        ,'m1A_Hypo'
-                        ,'m5C_Hypo'
-                        ,'m6A_Hypo'
-                        ,'m7G_Hypo'  ])
+                        ,'m7G_Ctrl' ])
 max_nclass=100
 
 def run_train_epoch(model,data,labelsign,optimizer,loss_func,weights=None):
@@ -189,7 +182,7 @@ def loadsingledata(query,mer=1,newvar=0,expand_label=True,shuffle=False,minlengt
             query = np.where(out_list == query)[0][0]
         else:
             query = int(query)
-    if query<28:
+    if query<25:
         data=np.load('/data/yiyou/Multi_WeakRM/%s_positive.pickle'%(out_list[query]),allow_pickle=True)
         neg_data=np.load('/data/yiyou/Multi_WeakRM/%s_negative.pickle'%(out_list[query]),allow_pickle=True)
         label=np.append(np.ones(len(data)),np.ones(len(neg_data))*-1)
@@ -197,7 +190,7 @@ def loadsingledata(query,mer=1,newvar=0,expand_label=True,shuffle=False,minlengt
         multi_label[:,query]=label
         data.extend(neg_data)
         #sample using random.sample(dataset,n)
-    elif query < 39:
+    elif query < 36:
         data = np.load('/data/yiyou/independent/sin%d.npy'%(query-28))
         label = np.load('/data/yiyou/independent/sin%d.label.npy'%(query-28))[:,query-28]
         multi_label = np.zeros([len(label), max_nclass])
