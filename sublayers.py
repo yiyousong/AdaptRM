@@ -18,7 +18,7 @@ class AdaptRM(nn.Module):
     def __init__(self,in_chan=4,outsize=100,kernel_size=7,dim=64,dropout=0.25,adaptpoolingsize=19,FChid=1000):
         super(AdaptRM, self).__init__()
         convoutsize=(adaptpoolingsize-2*(kernel_size)+1)*dim
-        model = nn.Sequential(nn.Conv1d(in_chan,dim,kernel_size),
+        self.model = nn.Sequential(nn.Conv1d(in_chan,dim,kernel_size),
                               nn.BatchNorm1d(dim),
                               nn.ReLU(),
                               nn.Dropout(dropout),
@@ -41,7 +41,7 @@ class AdaptRM(nn.Module):
                               nn.Linear(FChid,outsize)
                               )
     def forward(self,x):
-        return self(x)
+        return self.model(x)
 class LayerNorm(nn.Module):
     "Construct a layernorm module (See citation for details)."
 
