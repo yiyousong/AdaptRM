@@ -12,7 +12,10 @@ import torch.nn.functional as F
 import math, copy, time
 
 class AdaptRM(nn.Module):
-    def __init__(self,in_chan=4,kernel_size=7,dim=64,dropout=0.25,adaptpoolingsize=19,FChid=1000):
+    # input size [1, in_chan(4),seqlength]
+    # out size [1,outsize]
+    # 
+    def __init__(self,in_chan=4,outsize=100,kernel_size=7,dim=64,dropout=0.25,adaptpoolingsize=19,FChid=1000):
         super(AdaptRM, self).__init__()
         convoutsize=(adaptpoolingsize-2*(kernel_size)+1)*dim
         model = nn.Sequential(nn.Conv1d(in_chan,dim,kernel_size),
@@ -35,7 +38,7 @@ class AdaptRM(nn.Module):
                               nn.Linear(convoutsize,FChid),
                               nn.ReLU(),
                               nn.Dropout(dropout),
-                              nn.Linear(FChid,100)
+                              nn.Linear(FChid,outsize)
                               )
     def forward(self,x):
         return self(x)
